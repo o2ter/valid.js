@@ -27,6 +27,17 @@ import _ from 'lodash';
 import * as common_rules from './common_rules';
 import { ValidateError } from './error';
 
+export class InjectedValue {
+
+  value: any;
+  original: any;
+
+  constructor(value: any, original: any) {
+    this.value = value;
+    this.original = original;
+  }
+}
+
 type Internals<T> = {
 
   type: string;
@@ -43,7 +54,7 @@ type Internals<T> = {
 
   transform: (value: any) => any;
   typeCheck: (value: any) => boolean;
-  validate?: (value: any) => ValidateError[];
+  validate?: (value: any, original: any) => ValidateError[];
 
 }
 
@@ -56,7 +67,7 @@ type MappedRules<T, R extends RuleType, R2 extends RuleType> = {
 
 export type ISchema<T, R extends RuleType> = {
 
-  cast: (value: any) => any;
+  cast(value: any): any;
 
   validate(value: any): ValidateError[];
 
@@ -86,7 +97,7 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
   const RulesLoader = <R2 extends RuleType>(
     rules: R2
   ) => _.mapValues(rules, (rule, key) => (...args: any) => builder({
-    rules: [...internals.rules, { rule: key, validate: (v, error) => rule(v, error, ...args) }],
+    rules: [...internals.rules, { rule: key, validate: (v, error) => rule(v, error, ...args) }]
   }));
 
   const cast = (value: any) => {
@@ -96,7 +107,8 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
   const validate = _.memoize((value: any) => {
 
     const errors: ValidateError[] = [];
-    const _value = cast(value);
+    const _value = cast(value instanceof InjectedValue ? value.value : value);
+    const _original = value instanceof InjectedValue ? value.original : value;
 
     const opts = {
       type: internals.type,
@@ -104,12 +116,15 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
     };
 
     for (const rule of internals.rules) {
-      const error = rule.validate(_value, (attrs, msg) => new ValidateError({
-        ...opts,
-        rule: rule.rule,
-        attrs,
-        message: msg,
-      }));
+      const error = rule.validate(
+        rule.rule === 'where' ? new InjectedValue(_value, _original) : _value,
+        (attrs, msg) => new ValidateError({
+          ...opts,
+          rule: rule.rule,
+          attrs,
+          message: msg,
+        }),
+      );
       if (!_.isNil(error)) errors.push(error);
     };
 
@@ -122,7 +137,7 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
     }
 
     if (!_.isNil(internals.validate)) {
-      errors.push(...internals.validate(_value));
+      errors.push(...internals.validate(_value, value instanceof InjectedValue ? value.original : value));
     }
 
     return errors;
@@ -156,6 +171,18 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
       t: (value: any) => any
     ) {
       return builder({ transform: t });
+    },
+
+    where(
+      condition: (value: any, original: any) => boolean,
+      message: string,
+    ) {
+      return builder({
+        rules: [...internals.rules, {
+          rule: 'where',
+          validate: ({ value, original }, error) => condition(value, original) ? undefined : error({ message })
+        }]
+      });
     },
 
     ...RulesLoader(common_rules),
