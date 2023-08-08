@@ -34,14 +34,14 @@ export const array = <T extends ISchema<any, any>>(type?: T) => SchemaBuilder<Ty
   rules: [],
   transform: (v) => _.isArray(v) ? _.isNil(type) ? v : _.map(v, v => type.cast(v)) : undefined,
   typeCheck: _.isArray,
-  validate: (value: any, original: any) => {
+  validate: (value: any, root: any, original: any) => {
 
     if (_.isNil(value) || _.isNil(type)) return [];
 
     const errors: ValidateError[] = [];
 
     for (const [i, item] of value.entries()) {
-      errors.push(...type.validate(new InjectedValue(item, original)).map(x => new ValidateError({
+      errors.push(...type.validate(new InjectedValue(item, root, original)).map(x => new ValidateError({
         ...x.options,
         path: [`${i}`, ...x.path],
       })));

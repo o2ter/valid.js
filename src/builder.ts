@@ -30,10 +30,12 @@ import { ValidateError } from './error';
 export class InjectedValue {
 
   value: any;
+  root: any;
   original: any;
 
-  constructor(value: any, original: any) {
+  constructor(value: any, root: any, original: any) {
     this.value = value;
+    this.root = root;
     this.original = original;
   }
 }
@@ -54,7 +56,7 @@ type Internals<T> = {
 
   transform: (value: any) => any;
   typeCheck: (value: any) => boolean;
-  validate?: (value: any, original: any) => ValidateError[];
+  validate?: (value: any, root: any, original: any) => ValidateError[];
 
 }
 
@@ -108,6 +110,7 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
 
     const errors: ValidateError[] = [];
     const _value = cast(value instanceof InjectedValue ? value.value : value);
+    const _root = value instanceof InjectedValue ? value.root : _value;
     const _original = value instanceof InjectedValue ? value.original : value;
 
     const opts = {
@@ -117,7 +120,7 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
 
     for (const rule of internals.rules) {
       const error = rule.validate(
-        rule.rule === 'where' ? new InjectedValue(_value, _original) : _value,
+        rule.rule === 'where' ? new InjectedValue(_value, _root, _original) : _value,
         (attrs, msg) => new ValidateError({
           ...opts,
           rule: rule.rule,
@@ -137,7 +140,7 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
     }
 
     if (!_.isNil(internals.validate)) {
-      errors.push(...internals.validate(_value, value instanceof InjectedValue ? value.original : value));
+      errors.push(...internals.validate(_value, _root, _original));
     }
 
     return errors;
@@ -174,13 +177,13 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
     },
 
     where(
-      condition: (value: any, original: any) => boolean,
+      condition: (value: any, root: any, original: any) => boolean,
       message: string,
     ) {
       return builder({
         rules: [...internals.rules, {
           rule: 'where',
-          validate: ({ value, original }, error) => condition(value, original) ? undefined : error({ message })
+          validate: ({ value, root, original }, error) => condition(value, root, original) ? undefined : error({ message })
         }]
       });
     },
