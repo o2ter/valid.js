@@ -23,12 +23,29 @@
 //  THE SOFTWARE.
 //
 
-export { ISchema, TypeOfSchema } from './builder';
-export * from './error';
-export * from './string';
-export * from './object';
-export * from './record';
-export * from './array';
-export * from './boolean';
-export * from './number';
-export * from './date';
+import _ from 'lodash';
+import { ISchema, TypeOfSchema, SchemaBuilder, InjectedValue } from '../builder';
+import { ValidateError } from '../error';
+
+export const record = <T extends ISchema<any, any>>(type?: T) => SchemaBuilder<Record<string, TypeOfSchema<T>[]>>({
+  type: 'record',
+  default: {},
+  rules: [],
+  transform: (v) => _.isPlainObject(v) ? _.isNil(type) ? v : _.mapValues(v, v => type.cast(v)) : undefined,
+  typeCheck: _.isPlainObject,
+  validate: (value: any, root: any, original: any) => {
+
+    if (_.isNil(value) || _.isNil(type)) return [];
+
+    const errors: ValidateError[] = [];
+
+    for (const [key, val] of _.entries(value)) {
+      errors.push(...type.validate(new InjectedValue(val, root, original)).map(x => new ValidateError({
+        ...x.options,
+        path: [key, ...x.path],
+      })));
+    }
+
+    return errors;
+  },
+}, {});

@@ -34,12 +34,6 @@
     "lessThan": "${field} must be less than ${less}",
     "moreThan": "${field} must be greater than ${more}"
   },
-  "boolean": {
-    "isValue": "${field} field must be ${value}"
-  },
-  "object": {
-    "noUnknown": "${field} field has unspecified keys: ${unknown}"
-  },
   "array": {
     "notEmpty": "${field} must not be empty",
     "min": "${field} field must have at least ${min} items",
