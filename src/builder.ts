@@ -85,6 +85,11 @@ export type ISchema<T, R extends RuleType> = {
     t: (value: any) => any
   ): ISchema<T, R>;
 
+  where(
+    condition: (value: any, root: any, original: any) => boolean,
+    message: string,
+  ): ISchema<T, R>;
+
 } & MappedRules<T, R, R & typeof common_rules>;
 
 export type TypeOfSchema<S> = S extends ISchema<infer T, any> ? T : never;
