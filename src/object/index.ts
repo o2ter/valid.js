@@ -24,23 +24,33 @@
 //
 
 import _ from 'lodash';
-import { ISchema, TypeOfSchema, SchemaBuilder, InjectedValue } from '../builder';
+import { ISchema, TypeOfSchema, SchemaBuilder, InjectedValue, internalOf } from '../builder';
 import { ValidateError } from '../error';
 
 export const object = <S extends Record<string, ISchema<any, any>>>(shape: S) => SchemaBuilder<{ [K in keyof S]?: TypeOfSchema<S[K]>; }>({
   type: 'object',
   default: {},
   rules: [],
-  transform: (v) => _.isPlainObject(v) ? _.mapValues(v, (v, k) => _.isNil(shape[k]) ? v : shape[k].cast(v)) : undefined,
+  cast: (v, typeCheck) => _.isPlainObject(v) ? _.mapValues(v, (v, k) => { 
+    try {
+      return _.isNil(shape[k]) ? v : internalOf(shape[k]).cast(v, typeCheck);
+    } catch (e) {
+      if (!(e instanceof ValidateError)) throw e;
+      throw new ValidateError({
+        ...e.options,
+        path: [k, ...e.path],
+      });
+    }
+  }) : undefined,
   typeCheck: _.isPlainObject,
-  validate: (value: any, root: any, original: any) => {
+  validate: (value: any, root: any) => {
 
     if (_.isNil(value)) return [];
 
     const errors: ValidateError[] = [];
 
     for (const [key, type] of _.entries(shape)) {
-      errors.push(...type.validate(new InjectedValue(value[key], root, original)).map(x => new ValidateError({
+      errors.push(...type.validate(new InjectedValue(value[key], root)).map(x => new ValidateError({
         ...x.options,
         path: [key, ...x.path],
       })));

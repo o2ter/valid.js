@@ -31,6 +31,6 @@ export const string = () => SchemaBuilder<string, typeof _rules>({
   type: 'string',
   default: '',
   rules: [],
-  transform: (v) => _.isNil(v) || _.isString(v) ? v : `${v}`,
+  cast: (v) => _.isNil(v) || _.isString(v) ? v : `${v}`,
   typeCheck: _.isString,
 }, _rules);

@@ -31,12 +31,10 @@ export class InjectedValue {
 
   value: any;
   root: any;
-  original: any;
 
-  constructor(value: any, root: any, original: any) {
+  constructor(value: any, root: any) {
     this.value = value;
     this.root = root;
-    this.original = original;
   }
 }
 
@@ -54,9 +52,9 @@ type Internals<T> = {
     ) => ValidateError | undefined,
   })[];
 
-  transform: (value: any) => any;
+  cast: (value: any, typeCheck: boolean) => any;
   typeCheck: (value: any) => boolean;
-  validate?: (value: any, root: any, original: any) => ValidateError[];
+  validate?: (value: any, root: any) => ValidateError[];
 
 }
 
@@ -94,6 +92,9 @@ export type ISchema<T, R extends RuleType> = {
 
 export type TypeOfSchema<S> = S extends ISchema<infer T, any> ? T : never;
 
+const internalMap = new WeakMap<ISchema<any, any>, Internals<any>>();
+export const internalOf = <T, R extends RuleType>(schema: ISchema<T, R>) => internalMap.get(schema) as Internals<T>;
+
 export const SchemaBuilder = <T, R extends RuleType = {}>(
   internals: Internals<T>,
   rules: R
@@ -107,56 +108,67 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
     rules: [...internals.rules, { rule: key, validate: (v, error) => rule(v, error, ...args) }]
   }));
 
-  const cast = (value: any) => {
-    return internals.transform(value);
-  };
-
   const validate = _.memoize((value: any) => {
 
-    const errors: ValidateError[] = [];
-    const _value = cast(value instanceof InjectedValue ? value.value : value);
-    const _root = value instanceof InjectedValue ? value.root : _value;
-    const _original = value instanceof InjectedValue ? value.original : value;
+    try {
 
-    const opts = {
-      type: internals.type,
-      label: internals.label,
-    };
+      const original = value instanceof InjectedValue ? value.value : value;
+      const _value = internals.cast(original, true);
+      const root = value instanceof InjectedValue ? value.root : _value;
 
-    for (const rule of internals.rules) {
-      const error = rule.validate(
-        rule.rule === 'where' ? new InjectedValue(_value, _root, _original) : _value,
-        (attrs, msg) => new ValidateError({
+      const opts = {
+        type: internals.type,
+        label: internals.label,
+      };
+
+      const errors: ValidateError[] = [];
+
+      for (const rule of internals.rules) {
+        const error = rule.validate(
+          rule.rule === 'where' ? { value: _value, root: root, original } : _value,
+          (attrs, msg) => new ValidateError({
+            ...opts,
+            rule: rule.rule,
+            attrs,
+            message: msg,
+          }),
+        );
+        if (!_.isNil(error)) errors.push(error);
+      };
+
+      if (!_.isNil(_value) && !internals.typeCheck(_value)) {
+        errors.push(new ValidateError({
           ...opts,
-          rule: rule.rule,
-          attrs,
-          message: msg,
-        }),
-      );
-      if (!_.isNil(error)) errors.push(error);
-    };
+          rule: 'type',
+          attrs: { type: internals.type },
+        }));
+      }
 
-    if (!_.isNil(_value) && !internals.typeCheck(_value)) {
-      errors.push(new ValidateError({
-        ...opts,
-        rule: 'type',
-        attrs: { type: internals.type },
-      }));
+      if (!_.isNil(internals.validate)) {
+        errors.push(...internals.validate(_value, root));
+      }
+
+      return errors;
+
+    } catch (e) {
+      if (!(e instanceof ValidateError)) throw e;
+      return [new ValidateError({
+        label: internals.label,
+        ...e.options,
+      })];
     }
-
-    if (!_.isNil(internals.validate)) {
-      errors.push(...internals.validate(_value, _root, _original));
-    }
-
-    return errors;
   });
 
   const schema = {
 
-    cast, validate,
+    cast(value: any) {
+      return internals.cast(value, false);
+    },
+
+    validate,
 
     strict() {
-      return builder({ transform: (v) => internals.typeCheck(v) ? v : undefined });
+      return builder({ cast: (v) => internals.typeCheck(v) ? v : undefined });
     },
 
     label(
@@ -178,7 +190,7 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
     transform(
       t: (value: any) => any
     ) {
-      return builder({ transform: t });
+      return builder({ cast: t });
     },
 
     where(
@@ -198,5 +210,6 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
 
   };
 
+  internalMap.set(schema, internals);
   return schema;
 };

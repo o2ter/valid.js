@@ -26,16 +26,22 @@
 import _ from 'lodash';
 import { SchemaBuilder } from '../builder';
 import * as _rules from './rules';
+import { ValidateError } from '../error';
 
 export const date = () => SchemaBuilder<Date, typeof _rules>({
   type: 'date',
   rules: [],
-  transform: (v) => {
-    if (_.isDate(v)) return v;
+  cast: (v, typeCheck) => {
+    if (_.isNil(v) || _.isDate(v)) return v;
     if (_.isString(v) || _.isNumber(v)) {
       const date = new Date(v);
       if (!_.isNaN(date)) return date;
     }
+    if (typeCheck) throw new ValidateError({
+      type: 'date',
+      rule: 'type',
+      attrs: { type: 'date' },
+    });
   },
   typeCheck: _.isDate,
 }, _rules);

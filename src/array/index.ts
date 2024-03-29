@@ -24,7 +24,7 @@
 //
 
 import _ from 'lodash';
-import { ISchema, TypeOfSchema, SchemaBuilder, InjectedValue } from '../builder';
+import { ISchema, TypeOfSchema, SchemaBuilder, InjectedValue, internalOf } from '../builder';
 import { ValidateError } from '../error';
 import * as _rules from './rules';
 
@@ -32,16 +32,26 @@ export const array = <T extends ISchema<any, any>>(type?: T) => SchemaBuilder<Ty
   type: 'array',
   default: [],
   rules: [],
-  transform: (v) => _.isArray(v) ? _.isNil(type) ? v : _.map(v, v => type.cast(v)) : undefined,
+  cast: (v, typeCheck) => _.isArray(v) ? _.isNil(type) ? v : _.map(v, (v, i) => { 
+    try {
+      return internalOf(type).cast(v, typeCheck);
+    } catch (e) {
+      if (!(e instanceof ValidateError)) throw e;
+      throw new ValidateError({
+        ...e.options,
+        path: [`${i}`, ...e.path],
+      });
+    }
+  }) : undefined,
   typeCheck: _.isArray,
-  validate: (value: any, root: any, original: any) => {
+  validate: (value: any, root: any) => {
 
     if (_.isNil(value) || _.isNil(type)) return [];
 
     const errors: ValidateError[] = [];
 
     for (const [i, item] of value.entries()) {
-      errors.push(...type.validate(new InjectedValue(item, root, original)).map(x => new ValidateError({
+      errors.push(...type.validate(new InjectedValue(item, root)).map(x => new ValidateError({
         ...x.options,
         path: [`${i}`, ...x.path],
       })));

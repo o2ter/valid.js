@@ -31,16 +31,16 @@ export const record = <T extends ISchema<any, any>>(type?: T) => SchemaBuilder<R
   type: 'record',
   default: {},
   rules: [],
-  transform: (v) => _.isPlainObject(v) ? _.isNil(type) ? v : _.mapValues(v, v => type.cast(v)) : undefined,
+  cast: (v) => _.isPlainObject(v) ? _.isNil(type) ? v : _.mapValues(v, v => type.cast(v)) : undefined,
   typeCheck: _.isPlainObject,
-  validate: (value: any, root: any, original: any) => {
+  validate: (value: any, root: any) => {
 
     if (_.isNil(value) || _.isNil(type)) return [];
 
     const errors: ValidateError[] = [];
 
     for (const [key, val] of _.entries(value)) {
-      errors.push(...type.validate(new InjectedValue(val, root, original)).map(x => new ValidateError({
+      errors.push(...type.validate(new InjectedValue(val, root)).map(x => new ValidateError({
         ...x.options,
         path: [key, ...x.path],
       })));

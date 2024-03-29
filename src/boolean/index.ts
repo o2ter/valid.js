@@ -29,6 +29,6 @@ import { SchemaBuilder } from '../builder';
 export const boolean = () => SchemaBuilder<boolean>({
   type: 'boolean',
   rules: [],
-  transform: (v) => _.isBoolean(v) ? v : !!v,
+  cast: (v) => _.isBoolean(v) ? v : !!v,
   typeCheck: _.isBoolean,
 }, {});
