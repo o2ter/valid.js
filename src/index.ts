@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-export { ISchema, TypeOfSchema } from './builder';
+export { ISchema, TypeOfSchema, isSchema } from './builder';
 export * from './error';
 export * from './string';
 export * from './object';

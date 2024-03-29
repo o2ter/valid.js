@@ -95,6 +95,8 @@ export type TypeOfSchema<S> = S extends ISchema<infer T, any> ? T : never;
 const internalMap = new WeakMap<ISchema<any, any>, Internals<any>>();
 export const internalOf = <T, R extends RuleType>(schema: ISchema<T, R>) => internalMap.get(schema) as Internals<T>;
 
+export const isSchema = (schema: any): schema is ISchema<any, any> => !_.isNil(internalMap.get(schema));
+
 export const SchemaBuilder = <T, R extends RuleType = {}>(
   internals: Internals<T>,
   rules: R
