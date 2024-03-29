@@ -31,17 +31,27 @@ export const object = <S extends Record<string, ISchema<any, any>>>(shape: S) =>
   type: 'object',
   default: {},
   rules: [],
-  cast: (v, typeCheck) => _.isPlainObject(v) ? _.mapValues(v, (v, k) => { 
-    try {
-      return _.isNil(shape[k]) ? v : internalOf(shape[k]).cast(v, typeCheck);
-    } catch (e) {
-      if (!(e instanceof ValidateError)) throw e;
-      throw new ValidateError({
-        ...e.options,
-        path: [k, ...e.path],
-      });
+  cast: (v, typeCheck) => {
+    if (!_.isPlainObject(v)) return undefined;
+    const errors: ValidateError[] = [];
+    const result: Record<string, any> = {};
+    for (const [key, value] of _.entries(v)) {
+      try {
+        result[key] = _.isNil(shape[key]) ? value : internalOf(shape[key]).cast(value, typeCheck);
+      } catch (e) {
+        if (e instanceof ValidateError) {
+          errors.push(new ValidateError({
+            ...e.options,
+            path: [key, ...e.path],
+          }));
+        } else {
+          errors.push(..._.castArray(e) as ValidateError[]);
+        }
+      }
     }
-  }) : undefined,
+    if (!_.isEmpty(errors)) throw errors;
+    return result;
+  },
   typeCheck: _.isPlainObject,
   validate: (value: any, root: any) => {
 

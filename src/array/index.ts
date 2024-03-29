@@ -32,17 +32,29 @@ export const array = <T extends ISchema<any, any>>(type?: T) => SchemaBuilder<Ty
   type: 'array',
   default: [],
   rules: [],
-  cast: (v, typeCheck) => _.isArray(v) ? _.isNil(type) ? v : _.map(v, (v, i) => { 
-    try {
-      return internalOf(type).cast(v, typeCheck);
-    } catch (e) {
-      if (!(e instanceof ValidateError)) throw e;
-      throw new ValidateError({
-        ...e.options,
-        path: [`${i}`, ...e.path],
-      });
+  cast: (v, typeCheck) => {
+    if (!_.isArray(v)) return undefined;
+    if (_.isNil(type)) return v;
+    const errors: ValidateError[] = [];
+    const result: any[] = [];
+    const _type = internalOf(type);
+    for (const [i, value] of v.entries()) {
+      try {
+        result[i] = _type.cast(value, typeCheck);
+      } catch (e) {
+        if (e instanceof ValidateError) {
+          errors.push(new ValidateError({
+            ...e.options,
+            path: [`${i}`, ...e.path],
+          }));
+        } else {
+          errors.push(..._.castArray(e) as ValidateError[]);
+        }
+      }
     }
-  }) : undefined,
+    if (!_.isEmpty(errors)) throw errors;
+    return result;
+  },
   typeCheck: _.isArray,
   validate: (value: any, root: any) => {
 

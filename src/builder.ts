@@ -153,7 +153,7 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
       return errors;
 
     } catch (e) {
-      if (!(e instanceof ValidateError)) throw e;
+      if (!(e instanceof ValidateError)) return _.castArray(e) as ValidateError[];
       return [new ValidateError({
         label: internals.label,
         ...e.options,
