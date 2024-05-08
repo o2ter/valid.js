@@ -38,7 +38,7 @@ export default [
     ],
     plugins: [
       resolve({
-        extensions: ['.ts', '.tsx', '.mjs', '.js']
+        extensions: ['.tsx', '.jsx', '.ts', '.mjs', '.js']
       }),
       ...rollupPlugins
     ],
@@ -56,7 +56,7 @@ export default [
     ],
     plugins: [
       resolve({
-        extensions: ['.ts', '.tsx', '.mjs', '.js']
+        extensions: ['.tsx', '.jsx', '.ts', '.mjs', '.js']
       }),
       dts()
     ],
