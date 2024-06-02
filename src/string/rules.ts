@@ -62,25 +62,25 @@ export const matches = (
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   regex: RegExp,
   msg?: string,
-) => _.isString(value) && regex.test(value) ? undefined : error({ regex: `${regex}` }, msg);
+) => _.isString(value) && value.match(regex) ? undefined : error({ regex: `${regex}` }, msg);
 
 export const email = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && email_pattern.test(value) ? undefined : error({}, msg);
+) => _.isString(value) && value.match(email_pattern) ? undefined : error({}, msg);
 
 export const url = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && url_pattern.test(value) ? undefined : error({}, msg);
+) => _.isString(value) && value.match(url_pattern) ? undefined : error({}, msg);
 
 export const uuid = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && uuid_pattern.test(value) ? undefined : error({}, msg);
+) => _.isString(value) && value.match(uuid_pattern) ? undefined : error({}, msg);
 
 export const trim = (
   value: any,
