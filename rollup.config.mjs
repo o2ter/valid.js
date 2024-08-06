@@ -5,6 +5,14 @@ import babel from '@rollup/plugin-babel';
 import json from '@rollup/plugin-json';
 import dts from 'rollup-plugin-dts';
 
+const rollupConfig = {
+  input: 'src/index',
+  external: [
+    /node_modules/,
+  ],
+  makeAbsoluteExternalsRelative: true,
+};
+
 const rollupPlugins = [
   typescript({ declaration: false }),
   babel({
@@ -20,10 +28,7 @@ const rollupPlugins = [
 
 export default [
   {
-    input: 'src/index',
-    external: [
-      /node_modules/,
-    ],
+    ...rollupConfig,
     output: [
       {
         file: 'dist/index.js',
@@ -44,10 +49,7 @@ export default [
     ],
   },
   {
-    input: 'src/index',
-    external: [
-      /node_modules/,
-    ],
+    ...rollupConfig,
     output: [
       {
         file: 'dist/index.d.ts',
