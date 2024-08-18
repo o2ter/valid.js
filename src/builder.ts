@@ -69,6 +69,8 @@ export type ISchema<T, R extends RuleType> = {
 
   cast(value: any): any;
 
+  parse(value: any): T;
+
   validate(value: any): ValidateError[];
 
   strict(): ISchema<T, R>;
@@ -164,6 +166,12 @@ export const SchemaBuilder = <T, R extends RuleType = {}>(
   const schema = {
 
     cast(value: any) {
+      return internals.cast(value, false);
+    },
+
+    parse(value: any) {
+      const errors = validate(value);
+      if (!_.isEmpty(errors)) throw errors[0];
       return internals.cast(value, false);
     },
 
