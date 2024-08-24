@@ -38,9 +38,9 @@ export const number = () => SchemaBuilder<number, typeof _rules>({
       if (!_.isNaN(f)) return f;
     }
     if (typeCheck) throw new ValidateError({
-      type: 'date',
+      type: 'number',
       rule: 'type',
-      attrs: { type: 'date' },
+      attrs: { type: 'number' },
     });
   },
   typeCheck: _.isNumber,
