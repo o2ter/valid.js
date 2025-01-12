@@ -62,54 +62,54 @@ export const matches = (
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   regex: RegExp,
   msg?: string,
-) => _.isString(value) && value.match(regex) ? undefined : error({ regex: `${regex}` }, msg);
+) => _.isNil(value) || (_.isString(value) && value.match(regex)) ? undefined : error({ regex: `${regex}` }, msg);
 
 export const email = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && value.match(email_pattern) ? undefined : error({}, msg);
+) =>_.isEmpty(value) || ( _.isString(value) && value.match(email_pattern)) ? undefined : error({}, msg);
 
 export const url = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && value.match(url_pattern) ? undefined : error({}, msg);
+) =>_.isEmpty(value) || ( _.isString(value) && value.match(url_pattern)) ? undefined : error({}, msg);
 
 export const uuid = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && value.match(uuid_pattern) ? undefined : error({}, msg);
+) =>_.isEmpty(value) || ( _.isString(value) && value.match(uuid_pattern)) ? undefined : error({}, msg);
 
 export const trim = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && value === value.trim() ? undefined : error({}, msg);
+) => _.isEmpty(value) || (_.isString(value) && value === value.trim()) ? undefined : error({}, msg);
 
 export const lowercase = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && value === value.toLowerCase() ? undefined : error({}, msg);
+) => _.isEmpty(value) || (_.isString(value) && value === value.toLowerCase()) ? undefined : error({}, msg);
 
 export const uppercase = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   msg?: string,
-) => _.isString(value) && value === value.toUpperCase() ? undefined : error({}, msg);
+) => _.isEmpty(value) || (_.isString(value) && value === value.toUpperCase()) ? undefined : error({}, msg);
 
 export const oneOf = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   values: string[],
   msg?: string,
-) => _.isString(value) && values.includes(value) ? undefined : error({ values: `${values}` }, msg);
+) => _.isNil(value) || (_.isString(value) && values.includes(value)) ? undefined : error({ values: `${values}` }, msg);
 
 export const notOneOf = (
   value: any,
   error: (attrs: Record<string, string>, msg?: string) => ValidateError,
   values: string[],
   msg?: string,
-) => _.isString(value) && !values.includes(value) ? undefined : error({ values: `${values}` }, msg);
+) => _.isNil(value) || (_.isString(value) && !values.includes(value)) ? undefined : error({ values: `${values}` }, msg);
