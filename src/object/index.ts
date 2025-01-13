@@ -38,14 +38,16 @@ export const object = <S extends Record<string, ISchema<any, any>>>(shape: S) =>
     for (const [key, value] of _.entries(v)) {
       try {
         result[key] = _.isNil(shape[key]) ? value : internalOf(shape[key]).cast(value, typeCheck);
-      } catch (e) {
-        if (e instanceof ValidateError) {
-          errors.push(new ValidateError({
-            ...e.options,
-            path: [key, ...e.path],
-          }));
-        } else {
-          errors.push(..._.castArray(e) as ValidateError[]);
+      } catch (err) {
+        for (const e of _.castArray(err)) {
+          errors.push(
+            e instanceof ValidateError
+              ? new ValidateError({
+                ...e.options,
+                path: [key, ...e.path],
+              })
+              : e as any
+          );
         }
       }
     }
@@ -60,10 +62,14 @@ export const object = <S extends Record<string, ISchema<any, any>>>(shape: S) =>
     const errors: ValidateError[] = [];
 
     for (const [key, type] of _.entries(shape)) {
-      errors.push(...type.validate(new InjectedValue(value[key], root)).map(x => new ValidateError({
-        ...x.options,
-        path: [key, ...x.path],
-      })));
+      errors.push(...type.validate(new InjectedValue(value[key], root)).map(x =>
+        x instanceof ValidateError
+          ? new ValidateError({
+            ...x.options,
+            path: [key, ...x.path],
+          })
+          : x
+      ));
     }
 
     return errors;

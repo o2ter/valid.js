@@ -41,14 +41,16 @@ export const array = <T extends ISchema<any, any>>(type?: T) => SchemaBuilder<Ty
     for (const [i, value] of v.entries()) {
       try {
         result[i] = _type.cast(value, typeCheck);
-      } catch (e) {
-        if (e instanceof ValidateError) {
-          errors.push(new ValidateError({
-            ...e.options,
-            path: [`${i}`, ...e.path],
-          }));
-        } else {
-          errors.push(..._.castArray(e) as ValidateError[]);
+      } catch (err) {
+        for (const e of _.castArray(err)) {
+          errors.push(
+            e instanceof ValidateError
+              ? new ValidateError({
+                ...e.options,
+                path: [`${i}`, ...e.path],
+              })
+              : e as any
+          );
         }
       }
     }
@@ -63,10 +65,14 @@ export const array = <T extends ISchema<any, any>>(type?: T) => SchemaBuilder<Ty
     const errors: ValidateError[] = [];
 
     for (const [i, item] of value.entries()) {
-      errors.push(...type.validate(new InjectedValue(item, root)).map(x => new ValidateError({
-        ...x.options,
-        path: [`${i}`, ...x.path],
-      })));
+      errors.push(...type.validate(new InjectedValue(item, root)).map(x =>
+        x instanceof ValidateError
+          ? new ValidateError({
+            ...x.options,
+            path: [`${i}`, ...x.path],
+          })
+          : x
+      ));
     }
 
     return errors;
